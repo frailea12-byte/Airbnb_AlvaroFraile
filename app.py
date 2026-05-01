@@ -1,4 +1,3 @@
-
 import streamlit as st
 import pandas as pd
 
@@ -54,6 +53,21 @@ with tab1:
     df_map = df_filtrado.dropna(subset=["latitude", "longitude"])[["latitude", "longitude"]]
     st.map(df_map, zoom=12, size=10)
 
+    # ----------------------------------------------------------------
+    col_t1, col_t2 = st.columns(2)
+    with col_t1:
+        st.markdown("Precio por tipo de casa")
+        tabla1 = (df_filtrado.groupby("room_type")["price"].agg(["mean", "min", "max", "count"]).reset_index().rename(columns={"room_type": "Tipo", "mean": "Precio medio (€)", "min": "Precio mín (€)", "max": "Precio máx (€)", "count": "Nº viviendas"}))
+        for col in ["Precio medio (€)", "Precio mín (€)", "Precio máx (€)"]:
+            tabla1[col] = tabla1[col].round(2)
+        st.dataframe(tabla1, use_container_width=True, hide_index=True)
+    with col_t2:
+        st.markdown("Top barrios por reviews/mes")
+        tabla2 = (df_filtrado.groupby("neighbourhood")["reviews_per_month"].mean().reset_index().rename(columns={"neighbourhood": "Barrio", "reviews_per_month": "Media reviews/mes"}).sort_values("Media reviews/mes", ascending=False).head(10))
+        tabla2["Media reviews/mes"] = tabla2["Media reviews/mes"].round(2)
+        st.dataframe(tabla2, use_container_width=True, hide_index=True)
+    # ----------------------------------------------------------------
+
 # ------------------------------------------------------------------- Estilo de casa -----------------------------------------------------------------------------------------
 with tab2:
     st.markdown("TIPOS DE CASA")
@@ -70,19 +84,30 @@ with tab2:
         precio_tipo["Precio medio (€)"] = precio_tipo["Precio medio (€)"].round(2)
         st.bar_chart(precio_tipo.set_index("Tipo"))
 
+    # ----------------------------------------------------------------
+    st.markdown("Resumen por tipo de casa")
+    resumen = (df_filtrado.groupby("room_type").agg(Cantidad=("price", "count"), Precio_medio=("price", "mean"), Precio_min=("price", "min"), Precio_max=("price", "max"), Reviews_media=("number_of_reviews", "mean")).reset_index().rename(columns={"room_type": "Tipo", "Precio_medio": "Precio medio (€)", "Precio_min": "Precio mín (€)", "Precio_max": "Precio máx (€)", "Reviews_media": "Media reseña"}))
+    for col in ["Precio medio (€)", "Precio mín (€)", "Precio máx (€)", "Media reseña"]:
+        resumen[col] = resumen[col].round(2)
+    st.dataframe(resumen, use_container_width=True, hide_index=True)
+    # ----------------------------------------------------------------
+
 # -------------------------------------------------------------------------- reseñas -----------------------------------------------------------------------------------------
 with tab3:
     st.markdown("RESEÑAS")
     col_c, col_d = st.columns(2)
     with col_c:
         st.markdown("Top 10 Barrios")
-        top_barrios = (
-            df_filtrado.groupby("neighbourhood")["reviews_per_month"].mean().dropna().sort_values(ascending=False).head(10).reset_index().rename(columns={"neighbourhood": "Barrio", "reviews_per_month": "Media reviews/mes"}))
+        top_barrios = (df_filtrado.groupby("neighbourhood")["reviews_per_month"].mean().dropna().sort_values(ascending=False).head(10).reset_index().rename(columns={"neighbourhood": "Barrio", "reviews_per_month": "Media reseñas"}))
         st.bar_chart(top_barrios.set_index("Barrio"))
 
     with col_d:
         st.markdown("Por tipo de casa")
-        resena_tipo = (
-            df_filtrado.groupby("room_type")["number_of_reviews"].sum().reset_index().rename(columns={"room_type": "Tipo", "number_of_reviews": "Total reviews"})
-        )
+        resena_tipo = (df_filtrado.groupby("room_type")["number_of_reviews"].sum().reset_index().rename(columns={"room_type": "Tipo", "number_of_reviews": "Total reseña"}))
         st.bar_chart(resena_tipo.set_index("Tipo"))
+
+    # ----------------------------------------------------------------
+    st.markdown("Top 15 casas con más reseñas")
+    top_casa = (df_filtrado.nlargest(15, "number_of_reviews")[["name", "neighbourhood_group", "neighbourhood", "room_type", "number_of_reviews", "price"]].reset_index(drop=True).rename(columns={"name": "Nombre", "neighbourhood_group": "Distrito", "neighbourhood": "Barrio", "room_type": "Tipo", "number_of_reviews": "Nº Reseñas", "price": "Precio (€)"}))
+    st.dataframe(top_casa, use_container_width=True, hide_index=True)
+    # ----------------------------------------------------------------
