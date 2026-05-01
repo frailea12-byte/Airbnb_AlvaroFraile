@@ -64,7 +64,7 @@ with tab1:
     with col_t2:
         st.markdown("Top barrios por reviews/mes")
         tabla2 = (df_filtrado.groupby("neighbourhood")["reviews_per_month"].mean().reset_index().rename(columns={"neighbourhood": "Barrio", "reviews_per_month": "Media reseñas/mes"}).sort_values("Media reseñas/mes", ascending=False).head(10))
-        tabla2["Media reviews/mes"] = tabla2["Media reviews/mes"].round(2)
+        tabla2["Media reseñas/mes"] = tabla2["Media reseñas/mes"].round(2)
         st.dataframe(tabla2, use_container_width=True, hide_index=True)
     # ----------------------------------------------------------------
 
